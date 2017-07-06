@@ -6,9 +6,10 @@ require_relative './session'
 class ControllerBase
   attr_reader :req, :res, :params
 
-  def initialize(req, res)
+  def initialize(req, res, route_params = {})
     @req = req
     @res = res
+    @params = req.params.merge(route_params)
   end
 
   def already_built_response?
@@ -29,7 +30,7 @@ class ControllerBase
 
     res.write(content)
     res.set_header('Content-Type', content_type)
-    @session.store_session(res)
+    session.store_session(res)
     @already_built_response = true
   end
 
@@ -43,5 +44,10 @@ class ControllerBase
   def session
     @session ||= Session.new(req)
     @session
+  end
+
+  def invoke_action(action_name)
+    self.send(action_name)
+    render(action_name) unless already_built_response?
   end
 end
